@@ -7,9 +7,9 @@ const server = http.createServer(app);
 // cors 설정을 하지 않으면 오류가 생기게 됩니다. 설정해 줍니다.
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "https://653b852c08ca4962472c17bd--astonishing-blini-88b4d4.netlify.app/",
     methods: ["GET", "POST"],
-    allowedHeaders: ["my-custom-header"],
+    // allowedHeaders: ["my-custom-header"],
     credentials: true,
   },
 });
@@ -32,6 +32,7 @@ io.on("connection", (socket) => {
   //클라이언트가 특정 방에 참여하면 콜백 함수가 실행되며, 해당 방에 대한 정보를 처리합니다.
   socket.on("join_room", (data) => {
     // 방이 기존에 생성되어 있다면
+    console.log(data); // {room : 'room1'}
     if (users[data.room]) {
       // 현재 입장하려는 방에 있는 인원수
       const currentRoomLength = users[data.room].length;
@@ -45,9 +46,10 @@ io.on("connection", (socket) => {
       users[data.room] = [...users[data.room], { id: socket.id }];
     } else {
       // 방이 존재하지 않다면 값을 생성하고 추가해줍시다.
-      users[data.room] = [{ id: socket.id }];
+      users[data.room] = [{ id: socket.id }]; // 방 기준으로 어떤 유저들이 있는지 , users라는 객체 안에 data.room이 키, 값이 배열
+      //결국 users[data.room]  은 배열이다
     }
-    socketRoom[socket.id] = data.room;
+    socketRoom[socket.id] = data.room; // socket.id 기준으로 어떤 방에 들어가있는지
 
     // 입장
     socket.join(data.room);
@@ -60,7 +62,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("offer", (sdp, roomName) => {
+  socket.on("offer", (sdp, roomName) => { // 서버가 offer이벤트 들었다!
     // offer를 전달받고 다른 유저들에게 전달해 줍니다.
     socket.to(roomName).emit("getOffer", sdp);
   });
@@ -72,6 +74,7 @@ io.on("connection", (socket) => {
 
   socket.on("candidate", (candidate, roomName) => {
     // candidate를 전달받고 방의 다른 유저들에게 전달해 줍니다.
+    console.log(candidate);
     socket.to(roomName).emit("getCandidate", candidate);
   });
 
