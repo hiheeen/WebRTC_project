@@ -14,69 +14,6 @@ const VideoCall = () => {
 
   // 저는 특정 화면에서 방으로 진입시에 해당 방의 방번호를 url parameter로 전달해주었습니다.
   const { roomName } = useParams();
-
-  useEffect(() => {
-    socketRef.current = io('localhost:8080');
-
-    peerRef.current = new RTCPeerConnection({
-      iceServers: [
-        {
-          urls: 'stun:stun.l.google.com:19302',
-        },
-      ],
-    });
-    // 기존 유저가 있고, 새로운 유저가 들어왔다면 오퍼생성 => 'all_users'이벤트 듣고 createOffer함수 실행
-    socketRef.current.on('all_users', (allUsers) => {
-      if (allUsers.length > 0) {
-        createOffer();
-      }
-    });
-    // offer를 전달받은 PeerB만 해당됩니다
-    // offer를 들고 만들어둔 answer 함수 실행
-    socketRef.current.on('getOffer', (sdp) => {
-      console.log('recv Offer');
-      createAnswer(sdp); // peerB 클라이언트가 전달받은 sdp로 answer생성
-    });
-    // answer를 전달받을 PeerA만 해당됩니다.
-    // answer를 전달받아 PeerA의 RemoteDescription에 등록
-    socketRef.current.on('getAnswer', (sdp) => {
-      console.log('recv Answer');
-      if (!peerRef.current) {
-        return;
-      }
-      peerRef.current.setRemoteDescription(sdp);
-    });
-
-    // 서로의 candidate를 전달받아 등록
-    socketRef.current.on('getCandidate', async (candidate) => {
-      if (!peerRef.current) {
-        console.log('peerRef 없음?');
-        return;
-      }
-      console.log('candidate 실행'); // 이 콘솔이 찍히면 연결됨
-      try {
-        await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-      } catch (e) {
-        console.error('Error adding received ice candidate', e);
-      }
-    });
-    getMedia(); // 이 위치에서 작동 성공
-    // 마운트시 해당 방의 roomName을 서버에 전달
-    socketRef.current.emit('join_room', {
-      room: roomName,
-    });
-
-    // 언마운트시 socket disconnect
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
-      if (peerRef.current) {
-        peerRef.current.close();
-      }
-    };
-  }, []);
-
   const getMedia = async () => {
     try {
       // 자신이 원하는 자신의 스트림정보
@@ -168,6 +105,67 @@ const VideoCall = () => {
       console.error(e);
     }
   };
+  useEffect(() => {
+    socketRef.current = io('localhost:8080');
+
+    peerRef.current = new RTCPeerConnection({
+      iceServers: [
+        {
+          urls: 'stun:stun.l.google.com:19302',
+        },
+      ],
+    });
+    // 기존 유저가 있고, 새로운 유저가 들어왔다면 오퍼생성 => 'all_users'이벤트 듣고 createOffer함수 실행
+    socketRef.current.on('all_users', (allUsers) => {
+      if (allUsers.length > 0) {
+        createOffer();
+      }
+    });
+    // offer를 전달받은 PeerB만 해당됩니다
+    // offer를 들고 만들어둔 answer 함수 실행
+    socketRef.current.on('getOffer', (sdp) => {
+      console.log('recv Offer');
+      createAnswer(sdp); // peerB 클라이언트가 전달받은 sdp로 answer생성
+    });
+    // answer를 전달받을 PeerA만 해당됩니다.
+    // answer를 전달받아 PeerA의 RemoteDescription에 등록
+    socketRef.current.on('getAnswer', (sdp) => {
+      console.log('recv Answer');
+      if (!peerRef.current) {
+        return;
+      }
+      peerRef.current.setRemoteDescription(sdp);
+    });
+
+    // 서로의 candidate를 전달받아 등록
+    socketRef.current.on('getCandidate', async (candidate) => {
+      if (!peerRef.current) {
+        console.log('peerRef 없음?');
+        return;
+      }
+      console.log('candidate 실행'); // 이 콘솔이 찍히면 연결됨
+      try {
+        await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch (e) {
+        console.error('Error adding received ice candidate', e);
+      }
+    });
+    getMedia(); // 이 위치에서 작동 성공
+    // 마운트시 해당 방의 roomName을 서버에 전달
+    socketRef.current.emit('join_room', {
+      room: roomName,
+    });
+
+    // 언마운트시 socket disconnect
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+      if (peerRef.current) {
+        peerRef.current.close();
+      }
+    };
+  }, [getMedia]);
 
   return (
     <div>
