@@ -60,7 +60,7 @@ const VideoCall = () => {
         console.error('Error adding received ice candidate', e);
       }
     });
-    getMedia();
+    getMedia(); // 이 위치에서 작동 성공
     // 마운트시 해당 방의 roomName을 서버에 전달
     socketRef.current.emit('join_room', {
       room: roomName,
